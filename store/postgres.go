@@ -25,6 +25,10 @@ func NewPostgresStore(db_url string) (TaskStore, error) {
 		return nil, fmt.Errorf("ERROR: unable to ping the database: %v", err)
 	}
 
+	if err = createTable(db); err != nil {
+		return nil, err
+	}
+
 	log.Println("successfuly connected to PostgreSQL")
 	return &PostgresStore{
 		db: db,
@@ -153,4 +157,22 @@ func (ps *PostgresStore) Update(task *models.Task) error {
 
 	_, err := ps.db.Exec(sql_statement, task.ID, task.Status, task.Result, task.Error, task.FinishedAt)
 	return err
+}
+
+func createTable(db *sql.DB) error {
+	sql_statement := `CREATE TABLE IF NOT EXISTS tasks (
+		id 			TEXT 	PRIMARY KEY,
+		payload 	JSONB,
+		result 		JSONB,
+		status 		TEXT,
+		error 		TEXT,
+		created_at 	TIMESTAMP WITH TIME ZONE,
+		finished_at TIMESTAMP WITH TIME ZONE
+	);`
+
+	_, err := db.Exec(sql_statement)
+	if err != nil {
+		return fmt.Errorf("ERROR: error while creating a new table: %v", err)
+	}
+	return nil
 }
