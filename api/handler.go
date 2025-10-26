@@ -16,14 +16,14 @@ import (
 
 type TaskAPI struct {
 	taskDispatcher *worker.Dispatcher
-	taskStore      *store.TaskStore
+	taskStore      store.TaskStore
 }
 
 type CreateTaskRequest struct {
 	Payload any `json:"payload"`
 }
 
-func NewTaskAPI(ts *store.TaskStore, td *worker.Dispatcher) *TaskAPI {
+func NewTaskAPI(ts store.TaskStore, td *worker.Dispatcher) *TaskAPI {
 	return &TaskAPI{
 		taskDispatcher: td,
 		taskStore:      ts,
