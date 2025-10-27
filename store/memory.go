@@ -18,12 +18,13 @@ func NewMemoryTaskStore() TaskStore {
 	return &ts
 }
 
-func (ts *MemoryTaskStore) Create(task *md.Task) {
+func (ts *MemoryTaskStore) Create(task *md.Task) error {
 	ts.mu.Lock()
 
 	defer ts.mu.Unlock()
 
 	ts.tasks[task.ID] = task
+	return nil
 }
 
 func (ts *MemoryTaskStore) Get(id string) (*md.Task, error) {

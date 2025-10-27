@@ -51,7 +51,13 @@ func (ta *TaskAPI) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	}
 
-	ta.taskStore.Create(&current_task)
+	err := ta.taskStore.Create(&current_task)
+	if err != nil {
+		log.Printf("ERROR: unable to create new task: %v", err)
+		http.Error(w, "unable to create new task: %v", http.StatusInternalServerError)
+		return
+	}
+
 	ta.taskDispatcher.Submit(&current_task)
 
 	w.Header().Add("Content-Type", "application/json")

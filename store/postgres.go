@@ -35,7 +35,7 @@ func NewPostgresStore(db_url string) (TaskStore, error) {
 	}, nil
 }
 
-func (ps *PostgresStore) Create(task *models.Task) {
+func (ps *PostgresStore) Create(task *models.Task) error {
 	sql_statement := `
 		INSERT INTO tasks (id, payload, status, error, created_at) 
 		VALUES($1, $2, $3, $4, $5) `
@@ -43,14 +43,16 @@ func (ps *PostgresStore) Create(task *models.Task) {
 	payload_bytes, err := json.Marshal(task.Payload)
 	if err != nil {
 		log.Printf("ERROR: unable to parse the payload: %v\n", err)
-		return
+		return fmt.Errorf("ERROR: unable to parse the payload: %v\n", err)
 	}
 
 	_, err = ps.db.Exec(sql_statement, task.ID, payload_bytes, task.Status, "", task.CreatedAt)
 	if err != nil {
 		log.Printf("ERROR: unable to add task to databse: %v\n", err)
-		return
+		return fmt.Errorf("ERROR: unable to add task to databse: %v\n", err)
 	}
+
+	return nil
 }
 
 func (ps *PostgresStore) Get(id string) (*models.Task, error) {
