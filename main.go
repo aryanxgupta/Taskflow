@@ -13,11 +13,26 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	_ "github.com/jackc/pgx/v5"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	r := chi.NewRouter()
-	task_store := store.NewTaskStore()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("ERROR: unable to load .env file")
+	}
+
+	db_url := os.Getenv("DATABASE_URL")
+	if db_url == "" {
+		log.Fatalf("ERROR: DATABASE_URL not defined")
+	}
+
+	task_store, err := store.NewPostgresStore(db_url)
+	if err != nil {
+		log.Fatalf("ERROR: something went wrong: %v", err)
+	}
 	job_dispatcher := worker.NewDispatcher(task_store, 0)
 	job_dispatcher.Start()
 
@@ -44,7 +59,7 @@ func main() {
 
 	go func() {
 		log.Println("Server is starting")
-		if err := srv.ListenAndServe(); err != nil {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("ERROR: server error: %v", err)
 		}
 	}()

@@ -16,14 +16,14 @@ import (
 
 type TaskAPI struct {
 	taskDispatcher *worker.Dispatcher
-	taskStore      *store.TaskStore
+	taskStore      store.TaskStore
 }
 
 type CreateTaskRequest struct {
 	Payload any `json:"payload"`
 }
 
-func NewTaskAPI(ts *store.TaskStore, td *worker.Dispatcher) *TaskAPI {
+func NewTaskAPI(ts store.TaskStore, td *worker.Dispatcher) *TaskAPI {
 	return &TaskAPI{
 		taskDispatcher: td,
 		taskStore:      ts,
@@ -51,7 +51,13 @@ func (ta *TaskAPI) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now(),
 	}
 
-	ta.taskStore.Create(&current_task)
+	err := ta.taskStore.Create(&current_task)
+	if err != nil {
+		log.Printf("ERROR: unable to create new task: %v", err)
+		http.Error(w, "unable to create new task: %v", http.StatusInternalServerError)
+		return
+	}
+
 	ta.taskDispatcher.Submit(&current_task)
 
 	w.Header().Add("Content-Type", "application/json")

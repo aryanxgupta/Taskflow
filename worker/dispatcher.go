@@ -19,12 +19,12 @@ const (
 
 type Dispatcher struct {
 	taskQueue chan *md.Task
-	taskStore *ts.TaskStore
+	taskStore ts.TaskStore
 	workers   int
 	wg        sync.WaitGroup
 }
 
-func NewDispatcher(store *ts.TaskStore, workers int) *Dispatcher {
+func NewDispatcher(store ts.TaskStore, workers int) *Dispatcher {
 	if workers == 0 {
 		workers = DefaultMaxWorkers
 	}
