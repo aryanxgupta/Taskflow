@@ -14,15 +14,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	_ "github.com/jackc/pgx/v5"
-	"github.com/joho/godotenv"
 )
 
 func main() {
 	r := chi.NewRouter()
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("ERROR: unable to load .env file")
-	}
 
 	db_url := os.Getenv("DATABASE_URL")
 	if db_url == "" {

@@ -1,0 +1,14 @@
+.git
+.gitignore
+
+.dockerignore
+Dockerfile
+docker-compose.yml
+run_tests.sh
+
+README.md
+
+.env
+
+taskflow_server
+taskflow_server.exe
