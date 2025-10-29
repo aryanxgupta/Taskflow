@@ -42,12 +42,11 @@ This project is a deep dive into advanced Go concepts, including:
 
 ## 🚀 Getting Started
 
-You can run the entire application locally using Go and a Docker-based Postgres instance.
+You can run the entire application locally using Docker Compose, which handles both the API server and PostgreSQL database automatically.
 
 ### Prerequisites
-- Go (1.21+)
-- Docker Desktop
-- A Git client
+- Docker Desktop (or Docker + Docker Compose)
+- Git
 
 ### 1. Clone the Repository
 ```bash
@@ -55,46 +54,95 @@ git clone https://github.com/aryanxgupta/Taskflow.git
 cd taskflow
 ```
 
-### 2. Install Dependencies
-This project uses `godotenv` to load environment variables.
+### 2. Configure Environment Variables
+Copy the example environment file and update it with your desired credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit the `.env` file with your preferred database credentials:
+
+```env
+# Configuration for the Postgres Database
+POSTGRES_USER=your-username
+POSTGRES_PASSWORD=your-password
+POSTGRES_DB=your-db-name
+
+# Full connection string for the Go API
+# Note: 'taskflow-db' is the service name from docker-compose.yml
+DATABASE_URL=postgres://your-username:your-password@taskflow-db:5432/your-db-name?sslmode=disable
+```
+
+**Important:** Make sure the username, password, and database name match in both the `POSTGRES_*` variables and the `DATABASE_URL`.
+
+### 3. Start the Application
+Run the entire stack (database + API) with a single command:
+
+```bash
+docker-compose up -d
+```
+
+This will:
+- Start a PostgreSQL container with your configured credentials
+- Build and start the TaskFlow API container
+- Create a dedicated network for the services
+- Set up persistent volume storage for the database
+
+### 4. Verify the Application is Running
+Check the logs to confirm everything started successfully:
+
+```bash
+docker-compose logs -f api
+```
+
+You should see output similar to:
+```
+taskflow-api | 2025/10/27 14:00:00 successfully connected to PostgreSQL
+taskflow-api | 2025/10/27 14:00:00 Dispatcher started with 5 workers
+taskflow-api | 2025/10/27 14:00:00 Server is starting on http://localhost:8080
+```
+
+### 5. Stop the Application
+To stop all services:
+
+```bash
+docker-compose down
+```
+
+To stop and remove all data (including the database):
+
+```bash
+docker-compose down -v
+```
+
+## Alternative: Running Without Docker
+
+If you prefer to run the application without Docker, you can set up PostgreSQL manually.
+
+### 1. Install Dependencies
 ```bash
 go mod tidy
 ```
 
-### 3. Start the PostgreSQL Database
-This command will start a Postgres container in the background, pre-configured with the correct user, password, and database.
+### 2. Start PostgreSQL
 ```bash
-docker run --name <container-name> -d \
-  -e POSTGRES_USER=<user-name> \
-  -e POSTGRES_PASSWORD=<password> \
-  -e POSTGRES_DB=<db-name> \
+docker run --name taskflow-db -d \
+  -e POSTGRES_USER=your-username \
+  -e POSTGRES_PASSWORD=your-password \
+  -e POSTGRES_DB=your-db-name \
   -p 5432:5432 \
   postgres
 ```
 
-**To stop the container:** `docker stop <container-name>`
-**To start it again:** `docker start <container-name>`
-
-### 4. Create your Environment File
-The server reads its configuration from a `.env` file. Create a file named `.env` in the root of the project:
-
-**.env**
-```
-DATABASE_URL="postgres://<user-name>:<password>@localhost:5432/<db-name>?sslmode=disable"
+### 3. Create your `.env` File
+```env
+DATABASE_URL=postgres://your-username:your-password@localhost:5432/your-db-name?sslmode=disable
 ```
 
-### 5. Run the Application
+### 4. Run the Application
 ```bash
 go run ./cmd/taskflow/main.go
-```
-
-You should see the following output, confirming your database connection and server start:
-```
-2025/10/27 14:00:00 successfuly connected to PostgreSQL
-2025/10/27 14:00:00 Dispatcher started with 5 workers
-2025/10/27 14:00:00 Server is starting on http://localhost:8080
-...
-(Worker logs will appear here)
 ```
 
 ## API Endpoints
@@ -178,4 +226,49 @@ curl http://localhost:8080/tasks
 **Get a specific task (replace with an ID from your server logs):**
 ```bash
 curl http://localhost:8080/tasks/YOUR_TASK_ID_HERE
+```
+
+## Docker Compose Services
+
+The `docker-compose.yml` file defines two services:
+
+### Database Service
+- **Image:** `postgres` (latest)
+- **Container Name:** `taskflow-db`
+- **Volumes:** Persistent storage for database data
+- **Health Check:** Ensures the database is ready before the API starts
+
+### API Service
+- **Build:** Uses the `Dockerfile` in the project root
+- **Container Name:** `taskflow-api`
+- **Ports:** Exposes port 8080 for API access
+- **Dependencies:** Waits for the database to be healthy before starting
+- **Restart Policy:** Automatically restarts unless explicitly stopped
+
+## Useful Docker Commands
+
+**View running containers:**
+```bash
+docker-compose ps
+```
+
+**View logs for a specific service:**
+```bash
+docker-compose logs -f database
+docker-compose logs -f api
+```
+
+**Restart a service:**
+```bash
+docker-compose restart api
+```
+
+**Rebuild the API after code changes:**
+```bash
+docker-compose up -d --build api
+```
+
+**Access the PostgreSQL database directly:**
+```bash
+docker exec -it taskflow-db psql -U your-username -d your-db-name
 ```
